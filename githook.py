@@ -4,6 +4,8 @@ from flask import Flask, request, Response
 from youtrack.connection import Connection
 from youtrack import YouTrackException
 
+from slacker import Slacker
+
 # Configuration
 YOUTRACK_URL = ''
 YOUTRACK_USERNAME = ''
@@ -23,11 +25,22 @@ app.config.from_envvar('GITHOOK_SETTINGS', silent=True)
 def ping():
     return 'ping'
 
-@app.route('/hook', methods=['POST'])
-@app.route('/push_event', methods=['POST'])
-def push_event_hook():
+@app.route('/hook/<room>', methods=['POST'])
+#@app.route('/push_event', methods=['POST'])
+def push_event_hook(room=None):
     push_event = request.json
     app.logger.debug(push_event)
+    app.logger.debug("slack_room:%s" % room)
+
+    # process mergerequest
+    if 'object_kind' in push_event and push_event['object_kind'] == 'merge_request':
+        obj = push_event['object_attributes']
+        user = push_event['user']
+        slack = Slacker(app.config['SLACK_TOKEN'])
+        event = "Pull Request: %s" % (obj['url'])
+        slack.chat.post_message('#%s' % room, event, username=user['username'], icon_url=user['avatar_url'])
+        return Response('Push event processed. Thanks!', mimetype='text/plain')
+
     user_name = push_event['user_name']
     repo_name = push_event['repository']['name']
     repo_url = push_event['repository']['url']
