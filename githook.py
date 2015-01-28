@@ -37,7 +37,7 @@ def push_event_hook(room=None):
         obj = push_event['object_attributes']
         user = push_event['user']
         slack = Slacker(app.config['SLACK_TOKEN'])
-        url = "%s/%s/%s/merge_requests/%d" % (app.config['GITLAB_HOME'], obj['target']['namespace'], obj['target']['name'], obj['iid'])
+        url = "%s/%s/%s/merge_requests/%d" % (app.config['GITLAB_HOME'], obj['target']['namespace'].lower(), obj['target']['name'], obj['iid'])
         print url
         event = "Pull Request(%s): %s - %s\n%s" % (obj['state'], url, obj['title'], obj['description'])
         slack.chat.post_message('#%s' % room, event, username=user['username'], icon_url=user['avatar_url'])
